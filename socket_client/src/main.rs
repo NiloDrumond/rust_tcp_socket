@@ -11,7 +11,6 @@ fn main() {
             let durations = [0; 10_000];
             let durations = durations.map(|_| {
                 stream.write_all(&num.to_be_bytes()).unwrap();
-
                 let mut data = [0; 6];
                 let now = Instant::now();
                 match stream.read(&mut data) {
@@ -22,10 +21,20 @@ fn main() {
                         panic!("Failed to receive data: {}", e);
                     }
                 };
-                now.elapsed().as_millis()
+                now.elapsed().as_millis() as i32
             });
-            let duration: u128 = durations.iter().sum::<u128>() / durations.len() as u128;
-            println!("Average RTT: {}", duration);
+            let mean_duration: i32 = durations.iter().sum::<i32>() / durations.len() as i32;
+            let variance: f32 = durations
+                .iter()
+                .map(|value| {
+                    let diff: i32 = mean_duration - value;
+                    diff * diff
+                })
+                .sum::<i32>() as f32
+                / durations.len() as f32;
+            let std_deviation = variance.sqrt();
+            println!("Average RTT: {}", mean_duration);
+            println!("Standard Deviation: {}", std_deviation);
         }
         Err(e) => {
             println!("Failed to connect: {}", e);
